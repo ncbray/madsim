@@ -1,0 +1,123 @@
+{
+    "copyright": "Copyright 2014 Nicholas Bray",
+    "resources": [
+	{
+	    "name": "Inspiration",
+	    "id": "inspiration",
+	    "initial": 50,
+	    "capacity": 50,
+	    "info": "The ability to build things."
+	},
+	{
+	    "name": "Energy",
+	    "id": "energy",
+	    "info": "Pure, raw, energy.",
+	    "capacity": 100,
+	    "capacity_scale": [
+		{
+		    "resource": "batteries",
+		    "amount": 100
+		}
+	    ]
+	},
+	{
+	    "name": "Mass",
+	    "id": "mass",
+	    "info": "Physical material used for building.",
+	    "capacity": 100,
+	    "capacity_scale": [
+		{
+		    "resource": "storage",
+		    "amount": 100
+		}
+	    ]
+	},
+	{
+	    "name": "Reactors",
+	    "id": "reactors",
+	    "info": "Produces energy."
+	},
+	{
+	    "name": "Converters",
+	    "id": "converters",
+	    "info": "Converts 10 energy into 1 mass."
+	},
+	{
+	    "name": "Batteries",
+	    "id": "batteries",
+	    "info": "Store extra energy."
+	},
+	{
+	    "name": "Storage",
+	    "id": "storage",
+	    "info": "Store extra mass."
+	},
+	{
+	    "name": "Robots",
+	    "id": "robots",
+	    "info": "Robots do whatever work needs to be done, including defending the lab from Wargs."
+	},
+	{
+	    "name": "Corpses",
+	    "id": "corpses",
+	    "info": "Dead Wargs.  Waste not, want not."
+	}
+
+    ],
+    "actions": [
+	{
+	    "name": "Build Reactor",
+	    "id": "build_reactor",
+	    "uses": [
+		{
+		    "resource": "inspiration",
+		    "amount": 25
+		}
+	    ]
+	},
+	{
+	    "name": "Build Converter",
+	    "id": "build_converter",
+	    "uses": [
+		{
+		    "resource": "inspiration",
+		    "amount": 50
+		}
+	    ]
+	},
+	{
+	    "name": "Build Battery",
+	    "id": "build_battery",
+	    "uses": [
+		{
+		    "resource": "mass",
+		    "amount": 100
+		}
+	    ]
+	},
+	{
+	    "name": "Build Storage",
+	    "id": "build_storage",
+	    "uses": [
+		{
+		    "resource": "mass",
+		    "amount": 100
+		}
+	    ]
+	},
+	{
+	    "name": "Build Robot",
+	    "id": "build_robot",
+	    "uses": [
+		{
+		    "resource": "mass",
+		    "amount": 300
+		},
+		{
+		    "resource": "energy",
+		    "amount": 200
+		}
+	    ]
+	}
+    ]
+}

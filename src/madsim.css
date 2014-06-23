@@ -1,0 +1,86 @@
+/* Copyright 2014 Nicholas Bray */
+
+body {
+    font-family: "Helvetica Neue", "Helvetica", Helvetica, Arial, sans-serif;
+    padding: 0px;
+}
+
+
+#uiarea {
+    padding:0px;
+}
+
+#logarea {
+    overflow: scroll;
+    width: 600px;
+    height: 150px;
+    border: solid 1px;
+    display: inline-block;
+}
+
+#infoarea {
+    overflow: scroll;
+    width: 300px;
+    height: 150px;
+    border: solid 1px;
+    display: inline-block;
+}
+
+
+.name {
+    display: inline-block;
+    width: 85px;
+}
+
+.number {
+    display: inline-block;
+    width: 70px;
+    text-align: right;
+}
+
+.statusbar {
+    display: inline-block;
+    width: 80px;
+    height: 5px;
+    margin: 2px;
+    background-color: #eee;
+
+    border: solid 1px;
+}
+
+.statusbarinner {
+    display: inline-block;
+    width: 80px;
+    height: 5px;
+    margin: 0px;
+    background-color: green;
+}
+
+
+.action {
+    display: inline-block;
+    padding:5px;
+    background-color: #dcdcdc;
+    border: 1px solid #666;
+    color: #000;
+    text-decoration: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.action:hover {
+  color:#800;
+}
+
+.action:active {
+  color:#f00;
+}
+
+.action:focus {
+  color:#f00;
+}
+
+.disabled, .disabled:hover, .disabled:active, .disabled:focus {
+    color: #aaa;
+    background-color: #fff;
+}
