@@ -56,7 +56,6 @@ body {
     background-color: green;
 }
 
-
 .action {
     display: inline-block;
     padding:5px;
@@ -66,6 +65,10 @@ body {
     text-decoration: none;
     user-select: none;
     -webkit-user-select: none;
+}
+
+.inline {
+    padding:1px;
 }
 
 .action:hover {

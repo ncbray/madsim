@@ -35,27 +35,74 @@
 	{
 	    "name": "Reactors",
 	    "id": "reactors",
-	    "info": "Produces energy."
+	    "info": "Produces energy.",
+	    "buy": [
+		{
+		    "resource": "inspiration",
+		    "amount": 25
+		}
+	    ]
 	},
 	{
 	    "name": "Converters",
 	    "id": "converters",
-	    "info": "Converts 10 energy into 1 mass."
+	    "info": "Converts 10 energy into 1 mass.",
+	    "buy": [
+		{
+		    "resource": "inspiration",
+		    "amount": 50
+		}
+	    ]
 	},
 	{
 	    "name": "Batteries",
 	    "id": "batteries",
-	    "info": "Store extra energy."
+	    "info": "Store extra energy.",
+	    "buy": [
+		{
+		    "resource": "mass",
+		    "amount": 100
+		}
+	    ]
 	},
 	{
 	    "name": "Storage",
 	    "id": "storage",
-	    "info": "Store extra mass."
+	    "info": "Store extra mass.",
+	    "buy": [
+		{
+		    "resource": "mass",
+		    "amount": 100
+		}
+	    ]
 	},
 	{
 	    "name": "Robots",
 	    "id": "robots",
-	    "info": "Robots do whatever work needs to be done, including defending the lab from Wargs."
+	    "info": "Robots do whatever work needs to be done, including defending the lab from Wargs.",
+	    "buy": [
+		{
+		    "resource": "mass",
+		    "amount": 300
+		},
+		{
+		    "resource": "energy",
+		    "amount": 200
+		}
+	    ]
+
+	},
+	{
+	    "name": "Defense",
+	    "id": "defense",
+	    "info": "Robots defending the lab.",
+	    "assignment": "robots"
+	},
+	{
+	    "name": "Mining",
+	    "id": "mining",
+	    "info": "Robots mining.",
+	    "assignment": "robots"
 	},
 	{
 	    "name": "Corpses",

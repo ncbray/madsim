@@ -26,6 +26,40 @@ StatusBar.prototype.update = function(amt) {
     }
 };
 
+var ButtonView = function(e, isEnabled) {
+    this.element = e;
+    this.enabled = true;
+    this.isEnabled = isEnabled;
+    this.enabledStyle = e.className;
+};
+
+ButtonView.prototype.sync = function(state) {
+    var enabled = this.isEnabled(state);
+    if (enabled != this.enabled) {
+	this.enabled = enabled;
+	var style = this.enabledStyle;
+	if (!enabled) {
+	    style += " disabled";
+	}
+	this.element.className = style;
+    }
+};
+
+function inlineButton(label, onclick) {
+    var e = document.createElement("a");
+    e.className = "action inline";
+    e.addEventListener("click", onclick);
+    e.innerText = label;
+    return e;
+}
+
+function moveButton(label, state, srcId, dstId) {
+    return inlineButton(label, function() {
+	if (canMoveResource(state, srcId, dstId)) {
+	    moveResource(state, srcId, dstId);
+	}
+    });
+}
 
 var ResourceView = function(state, config) {
     this.config = config;
@@ -53,6 +87,34 @@ var ResourceView = function(state, config) {
     if ("capacity" in config) {
 	this.status = new StatusBar();
 	this.status.attach(this.wigit);
+    }
+
+    if ("buy" in config) {
+	this.buy = inlineButton("Buy", function() {
+	    if (canPayCost(state, config["buy"])) {
+		payCost(state, config["buy"]);
+		adjustResource(state, config["id"], 1);
+		state.view.log("Built " + config["id"] + ".");
+	    }
+	});
+	this.wigit.appendChild(this.buy);
+	state.ui.push(new ButtonView(this.buy, function(state) {
+	    return canPayCost(state, config["buy"]);
+	}));
+    }
+
+    if ("assignment" in config) {
+	this.assignAdd = moveButton("+", state, config["assignment"], config["id"]);
+	this.wigit.appendChild(this.assignAdd);
+	state.ui.push(new ButtonView(this.assignAdd, function(state) {
+	    return canMoveResource(state, config["assignment"], config["id"]);
+	}));
+
+	this.assignSub = moveButton("-", state, config["id"], config["assignment"]);
+	this.wigit.appendChild(this.assignSub);
+	state.ui.push(new ButtonView(this.assignSub, function(state) {
+	    return canMoveResource(state, config["id"], config["assignment"]);
+	}));
     }
 
     var area = document.getElementById("uiarea");
@@ -128,44 +190,43 @@ var ActionView = function(config, state) {
     this.wigit.addEventListener("mouseenter", showInfo);
     this.wigit.addEventListener("mousedown", showInfo);
 
-
-    this.wigit.onclick = function() {
+    this.wigit.addEventListener("click", function() {
 	performAction(state, config);
-    }
+    });
 
     var area = document.getElementById("uiarea");
     area.appendChild(this.wigit);
+
+    state.ui.push(new ButtonView(this.wigit, function(state) {
+	return canPerform(state, config);
+    }));
 };
 
-ActionView.prototype.sync = function(state) {
-    if (canPerform(state, this.config)) {
-	this.wigit.className = "action";
-    } else {
-	this.wigit.className = "action disabled";
-    }
-};
-
-function canPerform(state, config) {
-    for (var i in config.uses) {
-	var cost = config.uses[i];
+function canPayCost(state, config) {
+    for (var i in config) {
+	var cost = config[i];
 	if (resourceAmount(state, cost["resource"]) < cost["amount"]) {
 	    return false;
 	}
     }
-    return config.id in actions;
-}
+    return true;
+} 
 
 function payCost(state, config) {
-    for (var i in config.uses) {
-	var cost = config.uses[i];
+    for (var i in config) {
+	var cost = config[i];
 	adjustResource(state, cost["resource"], -cost["amount"]);
     }
+}
+
+function canPerform(state, config) {
+    return canPayCost(state, config.uses) && config.id in actions;
 }
 
 function performAction(state, config) {
     if (canPerform(state, config)) {
 	var impl = actions[config.id];
-	payCost(state, config);
+	payCost(state, config.uses);
 	impl.perform(state);
     }
 }
@@ -218,17 +279,16 @@ var MadSim = function(config) {
 
     this.resources = {};
     this.capacity = {};
-    this.views = [];
-    this.actions = [];
+    this.ui = [];
 
     for (var i in config["resources"]) {
 	var r = config["resources"][i];
 	this.resources[r.id] = r.initial | 0;
-	this.views.push(new ResourceView(this, r));
+	this.ui.push(new ResourceView(this, r));
     }
 
     for (var i in config["actions"]) {
-	this.actions.push(new ActionView(config["actions"][i], state));
+	new ActionView(config["actions"][i], state);
     }
 
     this.lastEvent = 0;
@@ -240,6 +300,21 @@ var MadSim = function(config) {
 function resourceAmount(state, id) {
     return state.resources[id]|0;
 };
+
+function canMoveResource(state, srcId, dstId) {
+    var cap = state.capacity[dstId];
+    return state.resources[srcId] >= 1 && (cap === undefined || state.resources[dstId] + 1 < cap)
+}
+
+function moveResource(state, srcId, dstId) {
+    if (canMoveResource(state, srcId, dstId)) {
+	state.resources[srcId] -= 1;
+	state.resources[dstId] += 1;
+	return true;
+    } else {
+	return false;
+    }
+}
 
 function adjustResource(state, id, amt) {
     accumulateResource(state, id, amt);
@@ -266,11 +341,8 @@ function capResource(state, id) {
 
 
 MadSim.prototype.sync = function() {
-    for (var i in this.actions) {
-	this.actions[i].sync(this);
-    }
-    for (var i in this.views) {
-	this.views[i].sync(this);
+    for (var i in this.ui) {
+	this.ui[i].sync(this);
     }
 };
 
@@ -303,7 +375,7 @@ function doEvents(state) {
 
 	var wargs = 2;
 
-	var robots = resourceAmount(state, "robots");
+	var robots = resourceAmount(state, "defense");
 	var pDefend = (robots / wargs) / 5;
 	
 
@@ -364,10 +436,11 @@ MadSim.prototype.frame = function(dt) {
 
 	adjustResource(state, "inspiration", 1);
 	accumulateResource(state, "energy", resourceAmount(state, "reactors"));
+	accumulateResource(state, "mass", resourceAmount(state, "mining"));
 
 	var input = Math.min(resourceAmount(state, "converters")*10, resourceAmount(state, "energy"));
 	var output = input * 0.1;
-	var cap = state.capacity["mass"] - resourceAmount(state, "mass");
+	var cap = Math.max(0, state.capacity["mass"] - resourceAmount(state, "mass"));
 	if (cap < output) {
 	    output =  cap;
 	    input = cap * 10;
@@ -376,6 +449,7 @@ MadSim.prototype.frame = function(dt) {
 	adjustResource(state, "mass", output);
 
 	capResource(state, "energy");
+	capResource(state, "mass");
 
 	doEvents(state);
     }
