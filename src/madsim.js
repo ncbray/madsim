@@ -143,6 +143,18 @@ function randomIndex(l) {
     return (Math.random() * l.length)|0;
 }
 
+function destroyResource(state, targets, destroyed) {
+    var index = randomIndex(targets);
+    var target = targets[index];
+    if (resourceAmount(state, target) >= 1) {
+	adjustResource(state, target, -1);
+	destroyed[index] += 1;
+	return 1;
+    } else {
+	return 0;
+    }
+}
+
 function doEvents(view, state, dt) {
     state.lastEvent += dt;
     var p = state.lastEvent / (state.lastEvent + 100);
@@ -171,13 +183,7 @@ function doEvents(view, state, dt) {
 		continue;
 	    }
 
-	    var index = randomIndex(targets);
-	    var target = targets[index];
-	    if (resourceAmount(state, target) >= 1) {
-		adjustResource(state, target, -1);
-		destroyed[index] += 1;
-		destroyedCount += 1;
-	    }
+	    destroyedCount += destroyResource(state, targets, destroyed);
 	}
 
 	if (destroyedCount) {

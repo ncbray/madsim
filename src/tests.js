@@ -31,6 +31,21 @@ QUnit.test("overflow resources", function(assert) {
     assert.strictEqual(resourceAmount(state, "foo"), 2);
 });
 
+QUnit.test("destroy resource", function(assert) {
+    var state = testState();
+    var targets = ["foo"];
+    var destroyed = [0];
+
+    assert.strictEqual(destroyResource(state, targets, destroyed), 1);
+    assert.strictEqual(destroyed[0], 1);
+    assert.strictEqual(resourceAmount(state, "foo"), 0);
+
+    assert.strictEqual(destroyResource(state, targets, destroyed), 0);
+    assert.strictEqual(destroyed[0], 1);
+    assert.strictEqual(resourceAmount(state, "foo"), 0);
+});
+
+
 QUnit.test("resource tick", function(assert) {
     var state = {
 	resources: {
