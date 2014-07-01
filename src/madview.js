@@ -137,24 +137,31 @@ var madview = {};
 	}
     };
 
+    var costString = function(config) {
+	var costs = [];
+	for (var i in config) {
+	    var cost = config[i];
+	    costs.push(cost["amount"] + " " + cost["resource"]);
+	}
+	return costs.join(", ");
+    };
+
     var MadSimView = function() {
 	this.resourceInfo = document.createElement("div");
 	this.ui = [];
     };
 
     MadSimView.prototype.showResourceInfo = function(config) {
-	this.resourceInfo.innerText = config["name"] + ": " + config["info"];
+	var text = config["name"] + ": " + config["info"];
+	if ("buy" in config) {
+	    text += "\n" + costString(config["buy"])
+	}
+	this.resourceInfo.innerText = text;
 	this.showInfo(this.resourceInfo);
     };
 
     MadSimView.prototype.showActionInfo = function(config) {
-	var costs = [];
-	for (var i in config.uses) {
-	    var cost = config.uses[i];
-	    costs.push(cost["amount"] + " " + cost["resource"]);
-	}
-
-	this.resourceInfo.innerText = config["name"] + ": " + costs.join(", ");
+	this.resourceInfo.innerText = config["name"] + ": " + costString(config["uses"]);
 	this.showInfo(this.resourceInfo);
     };
 

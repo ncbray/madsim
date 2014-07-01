@@ -4,9 +4,15 @@
 	{
 	    "name": "Inspiration",
 	    "id": "inspiration",
+	    "info": "The ability to build things.",
 	    "initial": 50,
 	    "capacity": 50,
-	    "info": "The ability to build things."
+	    "capacity_scale": [
+		{
+		    "resource": "level",
+		    "amount": 5
+		}
+	    ]
 	},
 	{
 	    "name": "Energy",
@@ -108,61 +114,21 @@
 	    "name": "Corpses",
 	    "id": "corpses",
 	    "info": "Dead Wargs.  Waste not, want not."
+	},
+	{
+	    "name": "Level",
+	    "id": "level",
+	    "info": "Player level."
 	}
-
     ],
     "actions": [
 	{
-	    "name": "Build Reactor",
-	    "id": "build_reactor",
-	    "uses": [
-		{
-		    "resource": "inspiration",
-		    "amount": 25
-		}
-	    ]
-	},
-	{
-	    "name": "Build Converter",
-	    "id": "build_converter",
+	    "name": "Start Combat",
+	    "id": "start_combat",
 	    "uses": [
 		{
 		    "resource": "inspiration",
 		    "amount": 50
-		}
-	    ]
-	},
-	{
-	    "name": "Build Battery",
-	    "id": "build_battery",
-	    "uses": [
-		{
-		    "resource": "mass",
-		    "amount": 100
-		}
-	    ]
-	},
-	{
-	    "name": "Build Storage",
-	    "id": "build_storage",
-	    "uses": [
-		{
-		    "resource": "mass",
-		    "amount": 100
-		}
-	    ]
-	},
-	{
-	    "name": "Build Robot",
-	    "id": "build_robot",
-	    "uses": [
-		{
-		    "resource": "mass",
-		    "amount": 300
-		},
-		{
-		    "resource": "energy",
-		    "amount": 200
 		}
 	    ]
 	}

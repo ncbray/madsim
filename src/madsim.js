@@ -32,34 +32,13 @@ function performAction(view, state, config) {
 }
 
 var actions = {
-    "build_reactor": {
+    "start_combat": {
 	perform: function(view, state) {
-	    adjustResource(state, "reactors", 1);
-	    view.log("Built reactor.");
-	}
-    },
-    "build_converter": {
-	perform: function(view, state) {
-	    adjustResource(state, "converters", 1);
-	    view.log("Built converter.");
-	}
-    },
-    "build_battery": {
-	perform: function(view, state) {
-	    adjustResource(state, "batteries", 1);
-	    view.log("Built battery.");
-	}
-    },
-    "build_storage": {
-	perform: function(view, state) {
-	    adjustResource(state, "storage", 1);
-	    view.log("Built storage.");
-	}
-    },
-    "build_robot": {
-	perform: function(view, state) {
-	    adjustResource(state, "robots", 1);
-	    view.log("Built robot.");
+	    // TODO make UI sensitive to state.combat
+	    if (!state.combat) {
+		view.log("Starting combat.");
+		initCombat(state);
+	    }
 	}
     }
 };
@@ -102,6 +81,7 @@ function accumulateResource(state, id, amt) {
     resourceSanity(state, id);
     state.resources[id] += amt;
 }
+
 
 function capResource(state, id) {
     var capped = false;
@@ -224,11 +204,58 @@ function resourceTick(state) {
 }
 
 
+function initMob(mob, amt) {
+    mob.hp.current = amt;
+    mob.hp.max = amt;
+}
+
+function initCombat(state) {
+    initMob(state.player, 10);
+    initMob(state.mob, 10);
+    state.combat = true;
+}
+
+function combatAttack(src, dst) {
+    if (Math.random() < 0.75) {
+	dst.hp.current -= 1;
+    }
+};
+
+function combatTick(state, view, dt) {
+    if (!state.combat) {
+	return;
+    }
+    state.combatTicks += 1;
+    while (state.combatTicks >= 5) {
+	state.combatTicks -= 5;
+	combatAttack(state.player, state.mob);
+	if (state.mob.hp.current <= 0) {
+	    view.log("The monster is slain.");
+	    adjustResource(state, "level", 1)
+	    adjustResource(state, "mass", 10)
+	    state.combat = false;
+	    return;
+	}
+	combatAttack(state.mob, state.player);
+	if (state.player.hp.current <= 0) {
+	    view.log("You are defeated.");
+	    state.cap
+	    state.combat = false;
+	    return;
+	}
+	view.log("Player: " + state.player.hp.current + " Monster: " + state.mob.hp.current);
+    }
+}
+
 var MadSim = function(config) {
     var state = {
 	resources: {},
 	capacity: {},
-	lastEvent: 0
+	lastEvent: 0,
+	player: {hp: {current: 0, max: 0}},
+	mob: {hp: {current: 0, max: 0}},
+	combat: false,
+	combatTicks: 0,
     };
     state.config = config;
 
@@ -259,6 +286,7 @@ var MadSim = function(config) {
 	for (var i = 0; i < ticks; i++) {
 	    syncCapacity(state);
 	    resourceTick(state);
+	    combatTick(state, view, dt);
 	    doEvents(view, state, tickLength);
 	}
 
