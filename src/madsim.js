@@ -297,16 +297,25 @@ var MadSim = function(config) {
     this.sync();
 };
 
+function resourceSanity(state, id) {
+    if (!(id in state.resources)) throw "Unknown resource " + id;
+}
+
 function resourceAmount(state, id) {
+    resourceSanity(state, id);
     return state.resources[id]|0;
 };
 
 function canMoveResource(state, srcId, dstId) {
+    resourceSanity(state, srcId);
+    resourceSanity(state, dstId);
     var cap = state.capacity[dstId];
     return state.resources[srcId] >= 1 && (cap === undefined || state.resources[dstId] + 1 < cap)
 }
 
 function moveResource(state, srcId, dstId) {
+    resourceSanity(state, srcId);
+    resourceSanity(state, dstId);
     if (canMoveResource(state, srcId, dstId)) {
 	state.resources[srcId] -= 1;
 	state.resources[dstId] += 1;
@@ -317,26 +326,33 @@ function moveResource(state, srcId, dstId) {
 }
 
 function adjustResource(state, id, amt) {
+    resourceSanity(state, id);
     accumulateResource(state, id, amt);
-    capResource(state, id);
+    return !capResource(state, id);
 }
 
 function accumulateResource(state, id, amt) {
+    resourceSanity(state, id);
     state.resources[id] += amt;
 }
 
 function capResource(state, id) {
+    var capped = false;
+    resourceSanity(state, id);
     var updated = state.resources[id];
     if (updated < 0) {
 	updated = 0;
+	capped = true;
     }
     if (id in state.capacity) {
 	var cap = state.capacity[id];
 	if (updated > cap) {
 	    updated = cap;
+	    capped = true;
 	}
     }
     state.resources[id] = updated;
+    return capped;
 }
 
 
@@ -422,6 +438,25 @@ function doEvents(state) {
     }
 }
 
+function resourceTick(state) {
+    adjustResource(state, "inspiration", 1);
+    accumulateResource(state, "energy", resourceAmount(state, "reactors"));
+    accumulateResource(state, "mass", resourceAmount(state, "mining"));
+
+    var input = Math.min(resourceAmount(state, "converters")*10, resourceAmount(state, "energy"));
+    var output = input * 0.1;
+    var cap = Math.max(0, state.capacity["mass"] - resourceAmount(state, "mass"));
+    if (cap < output) {
+	output =  cap;
+	input = cap * 10;
+    }
+    adjustResource(state, "energy", -input);
+    adjustResource(state, "mass", output);
+
+    capResource(state, "energy");
+    capResource(state, "mass");
+}
+
 MadSim.prototype.frame = function(dt) {
     var state = this;
 
@@ -433,24 +468,7 @@ MadSim.prototype.frame = function(dt) {
 	updated = true;
 
 	this.syncCapacity();
-
-	adjustResource(state, "inspiration", 1);
-	accumulateResource(state, "energy", resourceAmount(state, "reactors"));
-	accumulateResource(state, "mass", resourceAmount(state, "mining"));
-
-	var input = Math.min(resourceAmount(state, "converters")*10, resourceAmount(state, "energy"));
-	var output = input * 0.1;
-	var cap = Math.max(0, state.capacity["mass"] - resourceAmount(state, "mass"));
-	if (cap < output) {
-	    output =  cap;
-	    input = cap * 10;
-	}
-	adjustResource(state, "energy", -input);
-	adjustResource(state, "mass", output);
-
-	capResource(state, "energy");
-	capResource(state, "mass");
-
+	resourceTick(state);
 	doEvents(state);
     }
 
@@ -459,7 +477,6 @@ MadSim.prototype.frame = function(dt) {
     }
 };
 
-
 function loadJSON(url, callback) {
     var oReq = new XMLHttpRequest();
     oReq.onload = function () {
@@ -467,10 +484,4 @@ function loadJSON(url, callback) {
     };
     oReq.open("get", "config.json", true);
     oReq.send();
-}
-
-window.onload = function() {
-    loadJSON("config.json", function(result) {
-	var state = new MadSim(result);
-    });
 }
