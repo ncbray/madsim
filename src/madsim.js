@@ -61,7 +61,7 @@ function moveButton(label, state, srcId, dstId) {
     });
 }
 
-var ResourceView = function(state, config) {
+var ResourceView = function(view, state, config) {
     this.config = config;
 
     this.amount = 0;
@@ -79,7 +79,7 @@ var ResourceView = function(state, config) {
     this.wigit.appendChild(this.amountElement);
 
     var showInfo = function() {
-	state.view.showResourceInfo(config);
+	view.showResourceInfo(config);
     };
     this.wigit.addEventListener("mouseenter", showInfo);
     this.wigit.addEventListener("mousedown", showInfo);
@@ -94,11 +94,11 @@ var ResourceView = function(state, config) {
 	    if (canPayCost(state, config["buy"])) {
 		payCost(state, config["buy"]);
 		adjustResource(state, config["id"], 1);
-		state.view.log("Built " + config["id"] + ".");
+		view.log("Built " + config["id"] + ".");
 	    }
 	});
 	this.wigit.appendChild(this.buy);
-	state.ui.push(new ButtonView(this.buy, function(state) {
+	view.ui.push(new ButtonView(this.buy, function(state) {
 	    return canPayCost(state, config["buy"]);
 	}));
     }
@@ -106,13 +106,13 @@ var ResourceView = function(state, config) {
     if ("assignment" in config) {
 	this.assignAdd = moveButton("+", state, config["assignment"], config["id"]);
 	this.wigit.appendChild(this.assignAdd);
-	state.ui.push(new ButtonView(this.assignAdd, function(state) {
+	view.ui.push(new ButtonView(this.assignAdd, function(state) {
 	    return canMoveResource(state, config["assignment"], config["id"]);
 	}));
 
 	this.assignSub = moveButton("-", state, config["id"], config["assignment"]);
 	this.wigit.appendChild(this.assignSub);
-	state.ui.push(new ButtonView(this.assignSub, function(state) {
+	view.ui.push(new ButtonView(this.assignSub, function(state) {
 	    return canMoveResource(state, config["id"], config["assignment"]);
 	}));
     }
@@ -138,6 +138,7 @@ ResourceView.prototype.sync = function(state) {
 
 var MadSimView = function() {
     this.resourceInfo = document.createElement("div");
+    this.ui = [];
 };
 
 MadSimView.prototype.showResourceInfo = function(config) {
@@ -151,7 +152,6 @@ MadSimView.prototype.showActionInfo = function(config) {
 	var cost = config.uses[i];
 	costs.push(cost["amount"] + " " + cost["resource"]);
     }
-
 
     this.resourceInfo.innerText = config["name"] + ": " + costs.join(", ");
     this.showInfo(this.resourceInfo);
@@ -176,8 +176,14 @@ MadSimView.prototype.log = function(message) {
     area.scrollTop = Math.max(area.scrollHeight - area.clientHeight, 0);
 };
 
+MadSimView.prototype.sync = function(state) {
+    for (var i in this.ui) {
+	this.ui[i].sync(state);
+    }
+};
 
-var ActionView = function(config, state) {
+
+var ActionView = function(config, view, state) {
     this.config = config
 
     this.wigit = document.createElement("a");
@@ -185,19 +191,19 @@ var ActionView = function(config, state) {
     this.wigit.innerText = config.name;
 
     var showInfo = function() {
-	state.view.showActionInfo(config);
+	view.showActionInfo(config);
     };
     this.wigit.addEventListener("mouseenter", showInfo);
     this.wigit.addEventListener("mousedown", showInfo);
 
     this.wigit.addEventListener("click", function() {
-	performAction(state, config);
+	performAction(view, state, config);
     });
 
     var area = document.getElementById("uiarea");
     area.appendChild(this.wigit);
 
-    state.ui.push(new ButtonView(this.wigit, function(state) {
+    view.ui.push(new ButtonView(this.wigit, function(state) {
 	return canPerform(state, config);
     }));
 };
@@ -223,78 +229,45 @@ function canPerform(state, config) {
     return canPayCost(state, config.uses) && config.id in actions;
 }
 
-function performAction(state, config) {
+function performAction(view, state, config) {
     if (canPerform(state, config)) {
 	var impl = actions[config.id];
 	payCost(state, config.uses);
-	impl.perform(state);
+	impl.perform(view, state);
     }
 }
 
 var actions = {
     "build_reactor": {
-	perform: function(state) {
+	perform: function(view, state) {
 	    adjustResource(state, "reactors", 1);
-	    state.view.log("Built reactor.");
+	    view.log("Built reactor.");
 	}
     },
     "build_converter": {
-	perform: function(state) {
+	perform: function(view, state) {
 	    adjustResource(state, "converters", 1);
-	    state.view.log("Built converter.");
+	    view.log("Built converter.");
 	}
     },
     "build_battery": {
-	perform: function(state) {
+	perform: function(view, state) {
 	    adjustResource(state, "batteries", 1);
-	    state.view.log("Built battery.");
+	    view.log("Built battery.");
 	}
     },
     "build_storage": {
-	perform: function(state) {
+	perform: function(view, state) {
 	    adjustResource(state, "storage", 1);
-	    state.view.log("Built storage.");
+	    view.log("Built storage.");
 	}
     },
     "build_robot": {
-	perform: function(state) {
+	perform: function(view, state) {
 	    adjustResource(state, "robots", 1);
-	    state.view.log("Built robot.");
+	    view.log("Built robot.");
 	}
     }
-};
-
-var MadSim = function(config) {
-    var state = this;
-    this.runner = new GameRunner();
-    this.runner.onFrame(function(dt) {
-	state.frame(dt);
-    }).requestFrame();
-
-    this.config = config;
-    this.timeAccum = 0;
-    this.tickLength = 0.1;
-
-    this.view = new MadSimView();
-
-    this.resources = {};
-    this.capacity = {};
-    this.ui = [];
-
-    for (var i in config["resources"]) {
-	var r = config["resources"][i];
-	this.resources[r.id] = r.initial | 0;
-	this.ui.push(new ResourceView(this, r));
-    }
-
-    for (var i in config["actions"]) {
-	new ActionView(config["actions"][i], state);
-    }
-
-    this.lastEvent = 0;
-
-    this.syncCapacity();
-    this.sync();
 };
 
 function resourceSanity(state, id) {
@@ -355,15 +328,8 @@ function capResource(state, id) {
     return capped;
 }
 
-
-MadSim.prototype.sync = function() {
-    for (var i in this.ui) {
-	this.ui[i].sync(this);
-    }
-};
-
-MadSim.prototype.syncCapacity = function() {
-    var config = this.config;
+var syncCapacity = function(state) {
+    var config = state.config;
     for (var i in config["resources"]) {
 	var r = config["resources"][i];
 	if ("capacity" in r) {
@@ -371,10 +337,10 @@ MadSim.prototype.syncCapacity = function() {
 	    if ("capacity_scale" in r) {
 		for (var j in r["capacity_scale"]) {
 		    var term = r["capacity_scale"][j];
-		    capacity += resourceAmount(this, term["resource"]) * term["amount"];
+		    capacity += resourceAmount(state, term["resource"]) * term["amount"];
 		}
 	    }
-	    this.capacity[r.id] = capacity;
+	    state.capacity[r.id] = capacity;
 	}
     }
 };
@@ -383,10 +349,10 @@ function randomIndex(l) {
     return (Math.random() * l.length)|0;
 }
 
-function doEvents(state) {
-    state.lastEvent += state.tickLength;
+function doEvents(view, state, dt) {
+    state.lastEvent += dt;
     var p = state.lastEvent / (state.lastEvent + 100);
-    var tp = 1 - Math.pow(1 - p, state.tickLength);
+    var tp = 1 - Math.pow(1 - p, dt);
     if (Math.random() < tp) {
 
 	var wargs = 2;
@@ -430,9 +396,9 @@ function doEvents(state) {
 		    destroyedText += destroyed[i] + " " + targets[i];
 		}
 	    }
-	    state.view.log("Wargs attack and destroy " + destroyedText + ".");
+	    view.log("Wargs attack and destroy " + destroyedText + ".");
 	} else {
-	    state.view.log("Wargs attack, but destroy nothing.");
+	    view.log("Wargs attack, but destroy nothing.");
 	}
 	state.lastEvent = 0;
     }
@@ -457,24 +423,54 @@ function resourceTick(state) {
     capResource(state, "mass");
 }
 
+
+var MadSim = function(config) {
+    var state = {
+	resources: {},
+	capacity: {},
+	lastEvent: 0
+    };
+    state.config = config;
+
+    var view = new MadSimView();
+
+    for (var i in config["resources"]) {
+	var r = config["resources"][i];
+	state.resources[r.id] = r.initial | 0;
+	view.ui.push(new ResourceView(view, state, r));
+    }
+
+    for (var i in config["actions"]) {
+	new ActionView(config["actions"][i], view, state);
+    }
+
+    syncCapacity(state);
+    view.sync(state);
+
+    var timeAccum = 0;
+    var tickLength = 0.1;
+
+    this.runner = new GameRunner();
+    this.runner.onFrame(function(dt) {
+	timeAccum += dt;
+	var ticks = (timeAccum / tickLength)|0;
+	timeAccum -= ticks * tickLength;
+
+	for (var i = 0; i < ticks; i++) {
+	    syncCapacity(state);
+	    resourceTick(state);
+	    doEvents(view, state, tickLength);
+	}
+
+	if (ticks) {
+	    view.sync(state);
+	}
+    }).requestFrame();
+};
+
 MadSim.prototype.frame = function(dt) {
-    var state = this;
+    var state = this.state;
 
-    this.timeAccum += dt;
-    var updated = false;
-
-    while (this.timeAccum > this.tickLength) {
-	this.timeAccum -= this.tickLength;
-	updated = true;
-
-	this.syncCapacity();
-	resourceTick(state);
-	doEvents(state);
-    }
-
-    if (updated) {
-	this.sync();
-    }
 };
 
 function loadJSON(url, callback) {
